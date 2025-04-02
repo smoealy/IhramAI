@@ -1,3 +1,4 @@
+// pages/api/chat.js
 import { Configuration, OpenAIApi } from "openai";
 
 const config = new Configuration({

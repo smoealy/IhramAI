@@ -31,7 +31,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-center text-green-700">Ihram AI – Your Pilgrimage Companion</h1>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {messages.map((msg, i) => (
-            <div key={i} className={\`p-2 rounded \${msg.role === "user" ? "bg-green-100 text-right" : "bg-gray-200 text-left"}\`}>
+            <div key={i} className={`p-2 rounded ${msg.role === "user" ? "bg-green-100 text-right" : "bg-gray-200 text-left"}`}>
               {msg.content}
             </div>
           ))}

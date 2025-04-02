@@ -1,20 +1,18 @@
-// app/api/chat/route.js
-
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { OpenAI } from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(req) {
-  try {
-    const body = await req.json();
-    const { messages } = body;
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
+      status: 500,
+    });
+  }
 
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: "Invalid messages format" }, { status: 400 });
-    }
+  try {
+    const { messages } = await req.json();
 
     const systemPrompt = `
 You are Ihram AI, a warm, respectful, and spiritual guide trained to help Muslims prepare for Hajj and Umrah.
@@ -27,20 +25,22 @@ You help users:
 - Share relevant duas, Sunnah, and reminders
 
 Keep your answers short, sincere, and rooted in Islamic values. Always assume the user's intention is pure and sincere.
-    `;
+`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // use gpt-4 if you're on the paid plan
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
     });
 
-    const reply = response.choices[0].message.content;
-    return NextResponse.json({ reply });
+    const reply = completion.choices[0].message.content;
+
+    return new Response(JSON.stringify({ reply }), {
+      status: 200,
+    });
   } catch (err) {
-    console.error("API Chat Error:", err.message || err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Chat error:", err);
+    return new Response(JSON.stringify({ error: "Something went wrong." }), {
+      status: 500,
+    });
   }
 }

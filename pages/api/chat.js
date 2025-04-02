@@ -1,4 +1,3 @@
-
 import { Configuration, OpenAIApi } from "openai";
 
 const config = new Configuration({
@@ -13,7 +12,7 @@ export default async function handler(req, res) {
 
   const { messages } = req.body;
 
-  const systemPrompt = \`
+  const systemPrompt = `
 You are Ihram AI, a warm, respectful, and spiritual guide trained to help Muslims prepare for Hajj and Umrah.
 
 You help users:
@@ -24,7 +23,7 @@ You help users:
 - Share relevant duas, Sunnah, and reminders
 
 Keep your answers short, sincere, and rooted in Islamic values. Always assume the user's intention is pure and sincere.
-\`;
+`;
 
   try {
     const completion = await openai.createChatCompletion({

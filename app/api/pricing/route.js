@@ -1,32 +1,66 @@
+import fs from "fs";
+import path from "path";
+import { NextResponse } from "next/server";
+import csv from "csv-parser";
+
 export async function POST(req) {
   const body = await req.json();
-  const { travelers, country, date, duration, hotel } = body;
+  const { travelers, city, date, duration, hotelName } = body;
 
-  // --- Mock base prices per person (USD) ---
-  const basePrices = {
-    "3-star": 1200,
-    "4-star": 1800,
-    "5-star": 2500,
-  };
+  const filePath = path.join(process.cwd(), "data", "prices.csv");
+  const hotelData = [];
 
-  const durationMultiplier = {
-    "5": 0.9,
-    "7": 1,
-    "10": 1.3,
-  };
+  // Read CSV data
+  const readCSV = () =>
+    new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on("data", (row) => hotelData.push(row))
+        .on("end", () => resolve())
+        .on("error", (err) => reject(err));
+    });
 
-  const basePrice = basePrices[hotel] || 1500;
-  const total =
-    travelers * basePrice * (durationMultiplier[duration] || 1);
+  try {
+    await readCSV();
 
-  // --- Ihram Token Discount ---
-  const tokenDiscountRate = 0.12; // 12% discount with $IHRAM
-  const discounted = total * (1 - tokenDiscountRate);
-  const ihramTokens = discounted.toFixed(0); // 1 $IHRAM = $1 equivalent (mock)
+    // --- Filter matching hotel ---
+    const matches = hotelData.filter((row) => {
+      return (
+        row["Hotel Name"]?.toLowerCase().includes(hotelName.toLowerCase()) &&
+        row["City"]?.toLowerCase() === city.toLowerCase()
+      );
+    });
 
-  return Response.json({
-    price: total.toFixed(2),
-    tokens: ihramTokens,
-    discount: (total - discounted).toFixed(2),
-  });
+    if (!matches.length) {
+      return NextResponse.json({
+        error: "No matching hotel found.",
+      }, { status: 404 });
+    }
+
+    // --- Use average price of all matching entries ---
+    const avgPricePerNight =
+      matches.reduce((sum, row) => sum + parseFloat(row.Price), 0) /
+      matches.length;
+
+    const totalNights = parseInt(duration);
+    const totalPrice = avgPricePerNight * totalNights * travelers;
+
+    // Ihram Token Discount
+    const discountRate = 0.12;
+    const discounted = totalPrice * (1 - discountRate);
+
+    return NextResponse.json({
+      price: totalPrice.toFixed(2),
+      tokens: discounted.toFixed(0), // mock: 1 token = $1
+      discount: (totalPrice - discounted).toFixed(2),
+      hotel: hotelName,
+      nights: totalNights,
+      city,
+    });
+  } catch (err) {
+    console.error("Pricing API error:", err);
+    return NextResponse.json({
+      error: "Internal server error",
+    }, { status: 500 });
+  }
 }

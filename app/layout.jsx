@@ -1,4 +1,3 @@
-// app/layout.jsx
 export const metadata = {
   title: "Ihram AI",
   description: "Your Pilgrimage Companion",

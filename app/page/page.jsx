@@ -1,13 +1,14 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useState } from "react";
 
-export default function Home() {
+export default function Page() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     const userMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -21,7 +22,9 @@ export default function Home() {
     });
 
     const data = await res.json();
-    setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
+    if (data.reply) {
+      setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
+    }
     setLoading(false);
   };
 
@@ -40,11 +43,15 @@ export default function Home() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             className="flex-1 p-2 border rounded"
             placeholder="Ask about Hajj, Umrah, or Ihram Token..."
           />
-          <button onClick={sendMessage} disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded">
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
             {loading ? "..." : "Send"}
           </button>
         </div>

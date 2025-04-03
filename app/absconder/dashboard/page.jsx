@@ -1,94 +1,118 @@
-// app/absconder/dashboard/page.jsx
 'use client';
-
 import { useState } from 'react';
 
 export default function AbsconderDashboard() {
   const [files, setFiles] = useState([]);
   const [results, setResults] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleFileChange = (e) => {
+  const handleChange = (e) => {
     setFiles([...e.target.files]);
   };
 
   const handleSubmit = async () => {
+    if (files.length === 0) {
+      setError('Please upload at least one file.');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+    setResults([]);
+
     const formData = new FormData();
     files.forEach((file) => formData.append('passports', file));
 
-    const res = await fetch('/api/absconder/batch', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const res = await fetch('/api/absconder/batch', {
+        method: 'POST',
+        body: formData,
+      });
 
-    const data = await res.json();
-    setResults(data.results || []);
-  };
-
-  const filteredResults = results.filter((r) => {
-    if (filter === 'all') return true;
-    return r.color === filter;
-  });
-
-  const exportFlagged = () => {
-    const flagged = results.filter((r) => r.color !== 'green');
-    const csv = ['Filename,Status,Reason'].concat(
-      flagged.map((r) => `${r.filename},${r.status},${r.reason}`)
-    ).join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'flagged_users.csv';
-    link.click();
+      const json = await res.json();
+      if (res.ok) {
+        setResults(json.results);
+      } else {
+        setError(json.error || 'Something went wrong.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to submit files.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">📊 Absconder Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-4">📊 Visa Risk Dashboard</h1>
 
-      <div className="mb-4">
-        <input type="file" multiple accept="image/*,.pdf" onChange={handleFileChange} />
-        <button onClick={handleSubmit} className="ml-4 bg-blue-600 text-white px-4 py-2 rounded">Analyze</button>
-        <button onClick={exportFlagged} className="ml-2 bg-yellow-500 text-white px-4 py-2 rounded">Export Flagged</button>
-      </div>
+      <p className="mb-2 text-sm text-gray-500">
+        Upload multiple passport PDFs or images to check absconder risk.
+      </p>
 
-      <div className="mb-4">
-        <label className="mr-2 font-medium">Filter:</label>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="border px-2 py-1">
-          <option value="all">All</option>
-          <option value="red">Red (Likely)</option>
-          <option value="yellow">Yellow (Moderate)</option>
-          <option value="green">Green (Low)</option>
-        </select>
-      </div>
+      <input
+        type="file"
+        accept="image/*,.pdf"
+        multiple
+        onChange={handleChange}
+        className="mb-4"
+      />
+      <button
+        onClick={handleSubmit}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+        disabled={loading}
+      >
+        {loading ? 'Analyzing...' : 'Analyze Files'}
+      </button>
 
-      {filteredResults.length > 0 && (
-        <table className="w-full border border-gray-300">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border p-2 text-left">Filename</th>
-              <th className="border p-2 text-left">Status</th>
-              <th className="border p-2 text-left">Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredResults.map((r, idx) => (
-              <tr key={idx} className={
-                r.color === 'red' ? 'bg-red-100' :
-                r.color === 'yellow' ? 'bg-yellow-100' :
-                'bg-green-100'}>
-                <td className="border p-2">{r.filename}</td>
-                <td className="border p-2 font-semibold">{r.status}</td>
-                <td className="border p-2">{r.reason}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {error && (
+        <div className="mt-4 text-red-600 font-medium">{error}</div>
       )}
 
-      {filteredResults.length === 0 && (
-        <p className="mt-4 text-gray-500">No results yet. Upload passport files to begin analysis.</p>
+      {results.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {results.map((res, index) => (
+            <div
+              key={index}
+              className={`border rounded p-4 ${
+                res.color === 'red'
+                  ? 'border-red-600 bg-red-100'
+                  : res.color === 'yellow'
+                  ? 'border-yellow-500 bg-yellow-100'
+                  : 'border-green-600 bg-green-100'
+              }`}
+            >
+              <h2 className="text-lg font-semibold">
+                {res.filename || `File #${index + 1}`}
+              </h2>
+              <p>
+                <strong>Status:</strong>{' '}
+                <span
+                  className={`inline-block px-2 py-0.5 rounded text-white text-sm font-semibold ${
+                    res.color === 'red'
+                      ? 'bg-red-600'
+                      : res.color === 'yellow'
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                >
+                  {res.status}
+                </span>
+              </p>
+              <p className="mt-1">
+                <strong>🧠 Reason:</strong> {res.reason}
+              </p>
+              <details className="mt-2 text-sm">
+                <summary className="cursor-pointer">View Extracted Text</summary>
+                <pre className="mt-2 whitespace-pre-wrap bg-white p-2 rounded border border-gray-300 max-h-64 overflow-y-auto">
+                  {res.extracted}
+                </pre>
+              </details>
+            </div>
+          ))}
+        </div>
       )}
     </main>
   );

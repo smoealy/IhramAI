@@ -20,7 +20,7 @@ export async function POST(req) {
     const res = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld', // replace with real key in prod
+        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld', // replace with real key
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({

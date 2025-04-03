@@ -18,25 +18,22 @@ export async function POST(req) {
   const client_secret = process.env.AMADEUS_CLIENT_SECRET;
 
   try {
-    // Step 1: Get access token
-    const tokenRes = await fetch(
-      'https://test.api.amadeus.com/v1/security/oauth2/token',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id,
-          client_secret,
-        }),
-      }
-    );
+    // Get access token
+    const tokenRes = await fetch('https://test.api.amadeus.com/v1/security/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id,
+        client_secret,
+      }),
+    });
 
     const { access_token } = await tokenRes.json();
 
-    // Step 2: Convert city to IATA airport code
+    // Get airport code using city name
     const locationRes = await fetch(
-      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${city}&subType=AIRPORT&view=LIGHT`,
+      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${encodeURIComponent(city)}&subType=AIRPORT,CITY&view=LIGHT`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -45,29 +42,19 @@ export async function POST(req) {
     );
 
     const locationData = await locationRes.json();
-    const locationList = Array.isArray(locationData?.data)
-      ? locationData.data
-      : [];
+    const locations = Array.isArray(locationData?.data) ? locationData.data : [];
 
-    if (locationList.length === 0) {
+    const match = locations.find(loc => loc.iataCode);
+    const origin = match?.iataCode;
+
+    if (!origin) {
       return NextResponse.json(
         { error: `Could not find airport for city "${city}"` },
         { status: 400 }
       );
     }
 
-    // Use the first valid airport IATA code
-    const airport = locationList.find((loc) => loc.iataCode);
-    const origin = airport?.iataCode;
-
-    if (!origin) {
-      return NextResponse.json(
-        { error: 'No airport code found for selected city' },
-        { status: 400 }
-      );
-    }
-
-    // Step 3: Search flight offers to Jeddah (JED)
+    // Get flight offer to Jeddah (JED)
     const flightRes = await fetch(
       `https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=${origin}&destinationLocationCode=JED&departureDate=${departureDate}&adults=${adults}&currencyCode=SAR&max=1`,
       {
@@ -82,10 +69,7 @@ export async function POST(req) {
 
     if (!price || price === 'N/A') {
       return NextResponse.json(
-        {
-          error:
-            'No flight data available for the selected route or date.',
-        },
+        { error: 'No flight data available for that route or date.' },
         { status: 404 }
       );
     }
@@ -93,9 +77,6 @@ export async function POST(req) {
     return NextResponse.json({ price });
   } catch (err) {
     console.error('❌ Amadeus API Error:', err);
-    return NextResponse.json(
-      { error: 'Failed to fetch flight data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch flight data' }, { status: 500 });
   }
 }

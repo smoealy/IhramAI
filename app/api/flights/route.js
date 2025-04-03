@@ -18,7 +18,7 @@ export async function POST(req) {
   const client_secret = process.env.AMADEUS_CLIENT_SECRET;
 
   try {
-    // Step 1: Get Amadeus access token
+    // Step 1: Get access token
     const tokenRes = await fetch('https://test.api.amadeus.com/v1/security/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -33,10 +33,11 @@ export async function POST(req) {
     const access_token = tokenJson.access_token;
 
     if (!access_token) {
+      console.error('❌ Failed to retrieve access token:', tokenJson);
       return NextResponse.json({ error: 'Failed to authenticate with Amadeus' }, { status: 401 });
     }
 
-    // Step 2: Search for airport using city
+    // Step 2: Convert city name to airport code
     const locationRes = await fetch(
       `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${encodeURIComponent(
         city
@@ -48,31 +49,26 @@ export async function POST(req) {
       }
     );
 
-    const locationJson = await locationRes.json();
-
-    if (!locationJson?.data || !Array.isArray(locationJson.data) || locationJson.data.length === 0) {
-      return NextResponse.json(
-        { error: `Could not find airport for city "${city}"` },
-        { status: 400 }
-      );
+    let locationJson;
+    try {
+      locationJson = await locationRes.json();
+    } catch (parseErr) {
+      console.error('❌ Failed to parse location JSON:', parseErr);
+      return NextResponse.json({ error: 'Invalid location response from Amadeus' }, { status: 502 });
     }
 
-    // Try to pick the best airport match
-    const bestMatch = locationJson.data.find(loc => loc.iataCode && loc.subType === 'AIRPORT') 
-                   || locationJson.data.find(loc => loc.iataCode);
+    const bestMatch = locationJson?.data?.find(loc => loc.iataCode && loc.subType === 'AIRPORT')
+      || locationJson?.data?.find(loc => loc.iataCode);
 
     const origin = bestMatch?.iataCode;
-
     if (!origin) {
-      return NextResponse.json(
-        { error: `No valid airport code found for "${city}"` },
-        { status: 400 }
-      );
+      console.warn(`⚠️ No airport found for city: ${city}`);
+      return NextResponse.json({ error: `Could not find airport for city "${city}"` }, { status: 400 });
     }
 
     console.log(`✈️ Using IATA code for ${city}: ${origin}`);
 
-    // Step 3: Search for flight to Jeddah
+    // Step 3: Search flight to Jeddah
     const flightRes = await fetch(
       `https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=${origin}&destinationLocationCode=JED&departureDate=${departureDate}&adults=${adults}&currencyCode=SAR&max=1`,
       {
@@ -82,15 +78,22 @@ export async function POST(req) {
       }
     );
 
-    const flightData = await flightRes.json();
+    let flightData;
+    try {
+      flightData = await flightRes.json();
+    } catch (parseErr) {
+      console.error('❌ Failed to parse flight JSON:', parseErr);
+      return NextResponse.json({ error: 'Invalid flight response from Amadeus' }, { status: 502 });
+    }
+
     const price = flightData?.data?.[0]?.price?.total;
 
     if (!price || price === 'N/A') {
-      return NextResponse.json(
-        { error: 'No flights found for this route or date.' },
-        { status: 404 }
-      );
+      console.warn(`⚠️ No price returned for ${origin} to JED on ${departureDate}`);
+      return NextResponse.json({ error: 'No flights found for this route or date.' }, { status: 404 });
     }
+
+    console.log(`✅ Found flight from ${origin} to JED: ${price} SAR`);
 
     return NextResponse.json({ price });
   } catch (err) {

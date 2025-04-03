@@ -10,7 +10,7 @@ export async function POST(req) {
   const body = await req.json();
   console.log("📥 Request body:", body);
 
-  const { travelers, country, date, duration, makkahHotel, madinahHotel } = body;
+  const { travelers, country, makkahHotel, madinahHotel, makkahNights, madinahNights } = body;
   const filePath = path.join(process.cwd(), "data", "prices.csv");
   const hotelData = [];
 
@@ -45,10 +45,11 @@ export async function POST(req) {
         : 0;
     };
 
-    const nights = parseInt(duration);
     const pax = parseInt(travelers);
+    const nightsMakkah = parseInt(makkahNights);
+    const nightsMadinah = parseInt(madinahNights);
 
-    // Base pricing logic
+    // Base pricing
     const visaCost = 560;
     const transportCost = 400 / pax;
 
@@ -68,26 +69,23 @@ export async function POST(req) {
     else if (["nigeria", "kenya", "sudan", "kazakhstan"].includes(c)) airfareCost = regionAirfare["africa"];
     else if (["uae", "oman", "egypt", "saudi arabia", "morocco"].includes(c)) airfareCost = regionAirfare["gcc"];
 
-    const makkahHotelCost = makkahMatch
-      ? (getAvgHotel("makkah", makkahMatch["Hotel Name"]) / pax) * nights
-      : 0;
+    // Hotel cost per city
+    const makkahCost =
+      makkahMatch ? getAvgHotel("makkah", makkahMatch["Hotel Name"]) * nightsMakkah : 0;
+    const madinahCost =
+      madinahMatch ? getAvgHotel("madinah", madinahMatch["Hotel Name"]) * nightsMadinah : 0;
 
-    const madinahHotelCost = madinahMatch
-      ? (getAvgHotel("madinah", madinahMatch["Hotel Name"]) / pax) * nights
-      : 0;
-
-    const hotelTotal = makkahHotelCost + madinahHotelCost;
-
-    const perPerson = airfareCost + hotelTotal + visaCost + transportCost;
+    const hotelCostPerPassenger = (makkahCost + madinahCost) / pax;
+    const perPerson = airfareCost + hotelCostPerPassenger + visaCost + transportCost;
     const totalPrice = perPerson * pax;
-    const discountRate = 0.12;
+    const discountRate = 0.05;
     const discounted = totalPrice * (1 - discountRate);
 
     return NextResponse.json({
       price: totalPrice.toFixed(2),
       tokens: discounted.toFixed(0),
       discount: (totalPrice - discounted).toFixed(2),
-      nights,
+      nights: nightsMakkah + nightsMadinah,
       city: "Makkah + Madinah",
       hotels: {
         makkah: makkahMatch?.["Hotel Name"] || "N/A",
@@ -95,7 +93,7 @@ export async function POST(req) {
       },
       breakdown: {
         airfare: airfareCost.toFixed(2),
-        hotel: hotelTotal.toFixed(2),
+        hotel: hotelCostPerPassenger.toFixed(2),
         visa: visaCost.toFixed(2),
         transport: transportCost.toFixed(2),
       },

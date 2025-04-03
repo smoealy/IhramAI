@@ -28,13 +28,16 @@ export async function POST(req) {
   try {
     await readCSV();
 
-    // Filter only valid rows with both Hotel Name and City
     const matches = hotelData.filter((row) => {
-      if (!row["Hotel Name"] || !row["City"] || !row["Price"]) return false;
+      const hotel = row["Hotel Name"];
+      const hotelCity = row["City"];
+      const price = row["Price"];
+
+      if (!hotel || !hotelCity || !price) return false;
 
       return (
-        row["Hotel Name"].toLowerCase().includes(hotelName.toLowerCase()) &&
-        row["City"].toLowerCase() === city.toLowerCase()
+        hotel.toLowerCase().includes(hotelName.toLowerCase()) &&
+        hotelCity.toLowerCase() === city.toLowerCase()
       );
     });
 

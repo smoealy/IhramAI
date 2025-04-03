@@ -13,7 +13,8 @@ export async function POST(req) {
 
   const { travelers, city, date, duration, hotelName } = body;
 
-  const filePath = path.join(process.cwd(), "data", "prices.csv");
+  // ✅ UPDATED PATH: Read from public/data/prices.csv
+  const filePath = path.join(process.cwd(), "public", "data", "prices.csv");
   const hotelData = [];
 
   const readCSV = () =>

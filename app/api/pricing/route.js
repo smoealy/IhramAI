@@ -28,7 +28,6 @@ export async function POST(req) {
   try {
     await readCSV();
 
-    // --- Fuzzy Hotel Matching ---
     const fuse = new Fuse(hotelData, {
       keys: ["Hotel Name"],
       threshold: 0.4,
@@ -41,34 +40,27 @@ export async function POST(req) {
       return NextResponse.json({ error: "No matching hotel found." }, { status: 404 });
     }
 
-    const matches = hotelData.filter((row) => {
-      return (
-        row["Hotel Name"] === matchedHotelName &&
-        row["City"]?.toLowerCase() === city?.toLowerCase()
-      );
-    });
+    const filtered = hotelData.filter((row) =>
+      row["Hotel Name"] === matchedHotelName &&
+      row["City"]?.toLowerCase() === city?.toLowerCase()
+    );
 
-    if (!matches.length) {
-      console.warn("⚠️ No matches found for", matchedHotelName, city);
+    if (!filtered.length) {
       return NextResponse.json({ error: "No matching hotel in city." }, { status: 404 });
     }
 
     const avgPricePerNight =
-      matches.reduce((sum, row) => sum + parseFloat(row.Price || 0), 0) /
-      matches.length;
+      filtered.reduce((sum, row) => sum + parseFloat(row.Price || 0), 0) / filtered.length;
 
-    const totalNights = parseInt(duration);
+    const nights = parseInt(duration);
     const numTravelers = parseInt(travelers);
 
-    // --- Visa ---
-    const visaCost = 560;
+    if (!nights || !numTravelers) {
+      return NextResponse.json({ error: "Invalid duration or traveler count" }, { status: 400 });
+    }
 
-    // --- Transport ---
-    const transportVehicleCost = 400;
-    const transportCost = transportVehicleCost / numTravelers;
-
-    // --- Airfare by region ---
-    const regionAirfare = {
+    // ✈️ Airfare by region
+    const airfareMap = {
       "north america": 5000,
       "south asia": 1750,
       "far east": 3200,
@@ -76,23 +68,22 @@ export async function POST(req) {
       "gcc": 1500,
     };
 
-    let airfareCost = 3000; // default
     const countryLC = country?.toLowerCase() || "";
+    let airfareCost = 3000;
 
-    if (["pakistan", "india", "bangladesh"].includes(countryLC)) airfareCost = regionAirfare["south asia"];
-    else if (["canada", "usa"].includes(countryLC)) airfareCost = regionAirfare["north america"];
-    else if (["malaysia", "indonesia", "singapore"].includes(countryLC)) airfareCost = regionAirfare["far east"];
-    else if (["nigeria", "kenya", "uganda", "sudan", "uzbekistan", "kazakhstan"].includes(countryLC)) airfareCost = regionAirfare["africa"];
-    else if (["saudi arabia", "uae", "oman", "bahrain", "kuwait", "qatar", "egypt", "jordan", "iraq", "morocco"].includes(countryLC)) airfareCost = regionAirfare["gcc"];
+    if (/pakistan|india|bangladesh/.test(countryLC)) airfareCost = airfareMap["south asia"];
+    else if (/canada|usa/.test(countryLC)) airfareCost = airfareMap["north america"];
+    else if (/malaysia|indonesia|singapore/.test(countryLC)) airfareCost = airfareMap["far east"];
+    else if (/nigeria|kenya|uganda|sudan|uzbekistan|kazakhstan/.test(countryLC)) airfareCost = airfareMap["africa"];
+    else if (/saudi|uae|oman|bahrain|kuwait|qatar|egypt|jordan|iraq|morocco/.test(countryLC)) airfareCost = airfareMap["gcc"];
 
-    // --- Hotel cost ---
-    const hotelCost = (avgPricePerNight / numTravelers) * totalNights;
+    const visaCost = 560;
+    const transportCost = 400 / numTravelers;
+    const hotelCost = (avgPricePerNight / numTravelers) * nights;
 
-    // --- Total per person and total for group ---
     const perPerson = airfareCost + hotelCost + transportCost + visaCost;
     const totalPrice = perPerson * numTravelers;
 
-    // --- Ihram Token Discount ---
     const discountRate = 0.12;
     const discounted = totalPrice * (1 - discountRate);
 
@@ -101,7 +92,7 @@ export async function POST(req) {
       tokens: discounted.toFixed(0),
       discount: (totalPrice - discounted).toFixed(2),
       hotel: matchedHotelName,
-      nights: totalNights,
+      nights,
       city,
       breakdown: {
         airfare: airfareCost.toFixed(2),

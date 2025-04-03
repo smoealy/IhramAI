@@ -1,5 +1,3 @@
-// app/api/pricing/route.js
-
 export const runtime = "nodejs";
 
 import fs from "fs";
@@ -30,18 +28,17 @@ export async function POST(req) {
 
     const matches = hotelData.filter((row) => {
       const hotel = row["Hotel Name"];
-      const hotelCity = row["City"];
-      const price = row["Price"];
-
-      if (!hotel || !hotelCity || !price) return false;
+      const rowCity = row["City"];
+      if (!hotel || !rowCity) return false;
 
       return (
         hotel.toLowerCase().includes(hotelName.toLowerCase()) &&
-        hotelCity.toLowerCase() === city.toLowerCase()
+        rowCity.toLowerCase() === city.toLowerCase()
       );
     });
 
     if (!matches.length) {
+      console.warn("⚠️ No matches found for", hotelName, city);
       return NextResponse.json(
         { error: "No matching hotel found." },
         { status: 404 }

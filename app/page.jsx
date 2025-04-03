@@ -28,7 +28,7 @@ export default function PlannerPage() {
     setError('');
 
     try {
-      // Get live airfare from Amadeus
+      // Step 1: Fetch live flight pricing
       const flightRes = await fetch('/api/flights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,13 +38,13 @@ export default function PlannerPage() {
           adults: formData.travelers,
         }),
       });
-      const flightData = await flightRes.json();
 
-      if (!flightRes.ok) {
-        throw new Error(flightData.error || 'Flight fetch failed');
+      const flightData = await flightRes.json();
+      if (!flightRes.ok || !flightData.price) {
+        throw new Error(flightData.error || 'Unable to fetch flight pricing');
       }
 
-      // Combine flight data with planner logic
+      // Step 2: Calculate full package using fetched airfare
       const pricingRes = await fetch('/api/pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,13 +54,14 @@ export default function PlannerPage() {
         }),
       });
 
-      const data = await pricingRes.json();
+      const pricingData = await pricingRes.json();
       if (!pricingRes.ok) {
-        setError(data.error || 'Something went wrong');
+        setError(pricingData.error || 'Something went wrong');
       } else {
-        setResult(data);
+        setResult(pricingData);
       }
     } catch (err) {
+      console.error('❌ Submit Error:', err);
       setError('Failed to fetch estimate.');
     }
 

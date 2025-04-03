@@ -1,14 +1,14 @@
 Hotel Name,Room Type,City,Check-in Date,Check-out Date,Price,Currency,Supplier or Contact,Notes or Extras
-Abraj Al Kiswah Hotel,Standard Double,Makkah,2024-07-07,2025-02-23,95,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)&#8203;:contentReference[oaicite:1]{index=1}
-Abraj Al Kiswah Hotel,Standard Double,Makkah,2024-07-07,2025-02-23,110,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)&#8203;:contentReference[oaicite:2]{index=2}
-Abraj Al Kiswah Hotel,Superior Double,Makkah,2024-07-07,2025-02-23,105,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)&#8203;:contentReference[oaicite:3]{index=3}
-Abraj Al Kiswah Hotel,Superior Double,Makkah,2024-07-07,2025-02-23,130,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)&#8203;:contentReference[oaicite:4]{index=4}
-Abraj Al Kiswah Hotel,Deluxe Double,Makkah,2024-07-07,2025-02-23,140,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)&#8203;:contentReference[oaicite:5]{index=5}
-Abraj Al Kiswah Hotel,Deluxe Double,Makkah,2024-07-07,2025-02-23,165,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)&#8203;:contentReference[oaicite:6]{index=6}
-Abraj Al Kiswah Hotel,Standard Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,11000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)&#8203;:contentReference[oaicite:7]{index=7}
-Abraj Al Kiswah Hotel,Superior Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,14000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)&#8203;:contentReference[oaicite:8]{index=8}
-Abraj Al Kiswah Hotel,Deluxe Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,16000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)&#8203;:contentReference[oaicite:9]{index=9}
-Jabal Omar Hilton Convention Hotel,Two-Bedroom Suite (Partial Kaaba View),Makkah,2024-07-07,2025-02-23,1846,SAR,Travel Agent X,Per room per night (no meals)&#8203;:contentReference[oaicite:10]{index=10}
-Rawda Royal Inn,Triple,Madinah,2024-07-07,2025-02-23,350,SAR,Travel Agent X,Rate per night (Room Only)&#8203;:contentReference[oaicite:11]{index=11}
-Dar Al Iman InterContinental,Double,Madinah,2024-07-07,2025-02-23,500,SAR,Travel Agent Y,Rate per night (includes breakfast)&#8203;:contentReference[oaicite:12]{index=12}
-Makkah Clock Tower Fairmont,Quad,Makkah,2025-06-05,2025-06-15,48000,SAR,Travel Agent Y,10-night Hajj package per room (full board, incl. transport)&#8203;:contentReference[oaicite:13]{index=13}
+Abraj Al Kiswah Hotel,Standard Double,Makkah,2024-07-07,2025-02-23,95,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)
+Abraj Al Kiswah Hotel,Standard Double,Makkah,2024-07-07,2025-02-23,110,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)
+Abraj Al Kiswah Hotel,Superior Double,Makkah,2024-07-07,2025-02-23,105,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)
+Abraj Al Kiswah Hotel,Superior Double,Makkah,2024-07-07,2025-02-23,130,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)
+Abraj Al Kiswah Hotel,Deluxe Double,Makkah,2024-07-07,2025-02-23,140,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; group booking rate)
+Abraj Al Kiswah Hotel,Deluxe Double,Makkah,2024-07-07,2025-02-23,165,SAR,Abraj Al Kiswah Hotel,Rate per night (Room Only; individual booking rate)
+Abraj Al Kiswah Hotel,Standard Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,11000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)
+Abraj Al Kiswah Hotel,Superior Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,14000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)
+Abraj Al Kiswah Hotel,Deluxe Double (Ramadan Package),Makkah,2025-02-24,2025-04-03,16000,SAR,Abraj Al Kiswah Hotel,Package price for full Ramadan (Room Only)
+Jabal Omar Hilton Convention Hotel,Two-Bedroom Suite (Partial Kaaba View),Makkah,2024-07-07,2025-02-23,1846,SAR,Travel Agent X,Per room per night (no meals)
+Rawda Royal Inn,Triple,Madinah,2024-07-07,2025-02-23,350,SAR,Travel Agent X,Rate per night (Room Only)
+Dar Al Iman InterContinental,Double,Madinah,2024-07-07,2025-02-23,500,SAR,Travel Agent Y,Rate per night (includes breakfast)
+Makkah Clock Tower Fairmont,Quad,Makkah,2025-06-05,2025-06-15,48000,SAR,Travel Agent Y,10-night Hajj package per room (full board, incl. transport)

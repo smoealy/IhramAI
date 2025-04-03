@@ -1,38 +1,46 @@
 'use client';
+
 import { useState } from 'react';
 
 export default function PlannerPage() {
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     hotelName: '',
     city: '',
     date: '',
     duration: '',
-    travelers: ''
+    travelers: '',
   });
-  const [loading, setLoading] = useState(false);
+
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const getEstimate = async () => {
+  const handleSubmit = async () => {
     setLoading(true);
-    setError(null);
     setResult(null);
+    setError('');
+
     try {
       const res = await fetch('/api/pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
-      setResult(data);
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong');
+      } else {
+        setResult(data);
+      }
     } catch (err) {
-      setError(err.message);
+      setError('Failed to fetch estimate.');
     }
+
     setLoading(false);
   };
 
@@ -43,72 +51,72 @@ export default function PlannerPage() {
         Personalized, logistics-powered journey planning for your Hajj or Umrah — powered by 15+ years of real experience.
       </p>
 
-      {/* Pricing Estimator */}
       <section className="p-4 bg-white border rounded-xl shadow space-y-4">
-        <h2 className="text-xl font-semibold">📊 Estimate Your Package Cost</h2>
+        <h2 className="text-xl font-semibold mb-2">📊 Get Real-Time Estimate</h2>
+        
         <div className="grid grid-cols-2 gap-4">
           <input
-            type="text"
             name="hotelName"
             placeholder="Hotel Name"
-            value={form.hotelName}
+            className="border p-2 rounded"
+            value={formData.hotelName}
             onChange={handleChange}
-            className="p-2 border rounded"
           />
           <input
-            type="text"
             name="city"
-            placeholder="City (e.g., Makkah)"
-            value={form.city}
+            placeholder="City (Makkah or Madinah)"
+            className="border p-2 rounded"
+            value={formData.city}
             onChange={handleChange}
-            className="p-2 border rounded"
           />
           <input
-            type="date"
             name="date"
-            value={form.date}
+            type="date"
+            className="border p-2 rounded"
+            value={formData.date}
             onChange={handleChange}
-            className="p-2 border rounded"
           />
           <input
-            type="number"
             name="duration"
             placeholder="Duration (nights)"
-            value={form.duration}
+            className="border p-2 rounded"
+            value={formData.duration}
             onChange={handleChange}
-            className="p-2 border rounded"
           />
           <input
-            type="number"
             name="travelers"
             placeholder="Number of Travelers"
-            value={form.travelers}
+            className="border p-2 rounded"
+            value={formData.travelers}
             onChange={handleChange}
-            className="p-2 border rounded"
           />
         </div>
+
         <button
-          onClick={getEstimate}
-          className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          disabled={loading}
+          onClick={handleSubmit}
+          className="px-6 py-2 bg-green-700 text-white rounded hover:bg-green-800"
         >
           {loading ? 'Calculating...' : 'Get Estimate'}
         </button>
-
-        {result && (
-          <div className="mt-4 bg-gray-100 p-4 rounded text-green-700">
-            <p><strong>Total Price:</strong> SAR {result.price}</p>
-            <p><strong>Ihram Token Discount:</strong> SAR {result.discount}</p>
-            <p><strong>Tokens Required:</strong> {result.tokens} $IHRAM</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-4 bg-red-100 p-4 rounded text-red-700">
-            ❌ {error}
-          </div>
-        )}
       </section>
+
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded shadow">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {result && (
+        <section className="p-4 bg-green-50 border border-green-200 rounded-xl shadow space-y-2">
+          <h2 className="text-xl font-bold text-green-700">💡 Estimated Pricing</h2>
+          <p><strong>Hotel:</strong> {result.hotel}</p>
+          <p><strong>City:</strong> {result.city}</p>
+          <p><strong>Nights:</strong> {result.nights}</p>
+          <p><strong>Total Price:</strong> SAR {result.price}</p>
+          <p><strong>Ihram Token Discount:</strong> SAR {result.discount}</p>
+          <p><strong>Tokens Needed:</strong> {result.tokens} $IHRAM</p>
+        </section>
+      )}
     </main>
   );
 }

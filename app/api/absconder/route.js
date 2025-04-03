@@ -1,25 +1,23 @@
 // app/api/absconder/route.js
 
-export const runtime = 'nodejs';
+export const runtime = 'edge'; // Required for Vercel Edge Compatibility
 
 import { NextResponse } from 'next/server';
-import { createWorker } from 'tesseract.js';
+import Tesseract from 'tesseract.js';
 
 export async function POST(req) {
   try {
     const { imageBase64 } = await req.json();
 
-    if (!imageBase64) {
-      return NextResponse.json({ error: 'Missing image' }, { status: 400 });
-    }
+    const buffer = Buffer.from(imageBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 
-    const worker = await createWorker('eng');
     const {
-      data: { text }
-    } = await worker.recognize(Buffer.from(imageBase64, 'base64'));
-    await worker.terminate();
+      data: { text },
+    } = await Tesseract.recognize(buffer, 'eng');
 
     const lowerText = text.toLowerCase();
+
+    // --- Basic heuristics ---
     let score = 0;
     const redFlags = [];
 
@@ -27,10 +25,7 @@ export async function POST(req) {
       score += 2;
       redFlags.push('High-risk nationality');
     }
-    if (
-      lowerText.includes('male') &&
-      lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
-    ) {
+    if (lowerText.includes('male') && lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)) {
       score += 2;
       redFlags.push('Young male traveler');
     }
@@ -52,11 +47,11 @@ export async function POST(req) {
     return NextResponse.json({
       status,
       color: label,
-      reason: redFlags.join(', ') || 'No red flags detected',
+      reason: redFlags.join(', ') || 'No significant red flags detected',
       extracted: text,
     });
   } catch (err) {
-    console.error('❌ OCR error:', err);
-    return NextResponse.json({ error: 'OCR failed' }, { status: 500 });
+    console.error('❌ Absconder Check Error:', err);
+    return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
   }
 }

@@ -36,7 +36,10 @@ export async function POST(req) {
       score += 2;
       redFlags.push('High-risk nationality');
     }
-    if (lowerText.includes('male') && lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)) {
+    if (
+      lowerText.includes('male') &&
+      lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
+    ) {
       score += 2;
       redFlags.push('Young male traveler');
     }
@@ -67,9 +70,3 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

@@ -44,22 +44,6 @@ export default function AbsconderDashboard() {
     }
   };
 
-  const getBorderColor = (color) => {
-    return {
-      red: 'border-red-600 bg-red-100',
-      yellow: 'border-yellow-500 bg-yellow-100',
-      green: 'border-green-600 bg-green-100',
-    }[color] || 'border-gray-300 bg-gray-100';
-  };
-
-  const getBadgeColor = (color) => {
-    return {
-      red: 'bg-red-600',
-      yellow: 'bg-yellow-500',
-      green: 'bg-green-600',
-    }[color] || 'bg-gray-500';
-  };
-
   return (
     <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">📊 Visa Risk Dashboard</h1>
@@ -92,24 +76,39 @@ export default function AbsconderDashboard() {
           {results.map((res, index) => (
             <div
               key={index}
-              className={`border rounded p-4 ${getBorderColor(res.color)}`}
+              className={`border rounded p-4 ${
+                res.color === 'red'
+                  ? 'border-red-600 bg-red-100'
+                  : res.color === 'yellow'
+                  ? 'border-yellow-500 bg-yellow-100'
+                  : 'border-green-600 bg-green-100'
+              }`}
             >
               <h2 className="text-lg font-semibold">
                 {res.filename || `File #${index + 1}`}
               </h2>
-              <p>
+
+              <p className="mt-1">
                 <strong>Status:</strong>{' '}
                 <span
-                  className={`inline-block px-2 py-0.5 rounded text-white text-sm font-semibold ${getBadgeColor(res.color)}`}
+                  className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white ${
+                    res.color === 'red'
+                      ? 'bg-red-600'
+                      : res.color === 'yellow'
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
                 >
                   {res.status}
                 </span>
               </p>
+
               <p className="mt-1">
                 <strong>🧠 Reason:</strong> {res.reason}
               </p>
+
               <details className="mt-2 text-sm">
-                <summary className="cursor-pointer hover:text-blue-600">View Extracted Text</summary>
+                <summary className="cursor-pointer">View Extracted Text</summary>
                 <pre className="mt-2 whitespace-pre-wrap bg-white p-2 rounded border border-gray-300 max-h-64 overflow-y-auto">
                   {res.extracted}
                 </pre>

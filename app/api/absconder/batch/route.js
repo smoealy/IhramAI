@@ -1,88 +1,81 @@
 // app/api/absconder/batch/route.js
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-export const preferredRegion = 'iad1';
+export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
-import formidable from 'formidable';
-import fs from 'fs';
-
-async function analyzeText(text) {
-  const lowerText = text.toLowerCase();
-  let score = 0;
-  const redFlags = [];
-
-  if (lowerText.includes('pakistan') || lowerText.includes('bangladesh')) {
-    score += 2;
-    redFlags.push('High-risk nationality');
-  }
-  if (
-    lowerText.includes('male') &&
-    lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
-  ) {
-    score += 2;
-    redFlags.push('Young male traveler');
-  }
-  if (lowerText.includes('student') || lowerText.includes('labor')) {
-    score += 1;
-    redFlags.push('Occupation: student or labor');
-  }
-
-  let label = 'green';
-  let status = 'Low risk';
-  if (score >= 5) {
-    label = 'red';
-    status = 'Likely absconder';
-  } else if (score >= 3) {
-    label = 'yellow';
-    status = 'Moderate risk';
-  }
-
-  return {
-    status,
-    color: label,
-    reason: redFlags.join(', ') || 'No significant red flags detected',
-    extracted: text,
-  };
-}
 
 export async function POST(req) {
-  const form = formidable({ multiples: true });
+  try {
+    const formData = await req.formData();
+    const files = formData.getAll('passports');
+    const results = [];
 
-  const files = await new Promise((resolve, reject) => {
-    form.parse(req, async (err, fields, files) => {
-      if (err) return reject(err);
-      const uploads = Array.isArray(files.passports) ? files.passports : [files.passports];
-      resolve(uploads);
-    });
-  });
+    for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const base64Image = buffer.toString('base64');
 
-  const results = [];
+      const ocrRes = await fetch('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        headers: {
+          apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          base64Image: `data:${file.type};base64,${base64Image}`,
+          isOverlayRequired: 'false',
+          OCREngine: '2',
+          language: 'eng'
+        })
+      });
 
-  for (const file of files) {
-    const buffer = fs.readFileSync(file.filepath);
-    const base64 = buffer.toString('base64');
+      const ocrJson = await ocrRes.json();
+      const text = ocrJson?.ParsedResults?.[0]?.ParsedText || '';
+      const lowerText = text.toLowerCase();
 
-    const res = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      headers: {
-        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        base64Image: `data:${file.mimetype};base64,${base64}`,
-        isTable: 'false',
-        OCREngine: '2',
-      }),
-    });
+      // Heuristic
+      let score = 0;
+      const redFlags = [];
 
-    const json = await res.json();
-    const text = json.ParsedResults?.[0]?.ParsedText || '';
-    const result = await analyzeText(text);
-    result.filename = file.originalFilename;
-    results.push(result);
+      if (lowerText.includes('pakistan') || lowerText.includes('bangladesh')) {
+        score += 2;
+        redFlags.push('High-risk nationality');
+      }
+
+      if (
+        lowerText.includes('male') &&
+        lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
+      ) {
+        score += 2;
+        redFlags.push('Young male traveler');
+      }
+
+      if (lowerText.includes('student') || lowerText.includes('labor')) {
+        score += 1;
+        redFlags.push('Occupation: student or labor');
+      }
+
+      let label = 'green';
+      let status = 'Low risk';
+      if (score >= 5) {
+        label = 'red';
+        status = 'Likely absconder';
+      } else if (score >= 3) {
+        label = 'yellow';
+        status = 'Moderate risk';
+      }
+
+      results.push({
+        filename: file.name,
+        status,
+        color: label,
+        reason: redFlags.join(', ') || 'No significant red flags detected',
+        extracted: text
+      });
+    }
+
+    return NextResponse.json({ results });
+  } catch (err) {
+    console.error('❌ Batch OCR API error:', err);
+    return NextResponse.json({ error: 'Batch OCR failed' }, { status: 500 });
   }
-
-  return NextResponse.json({ results });
 }

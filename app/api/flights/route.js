@@ -29,8 +29,10 @@ export async function POST(req) {
     const { access_token } = await tokenRes.json();
 
     // Step 2: Convert city to IATA airport code
+    console.log('🔍 Searching airport for:', city);
+
     const locationRes = await fetch(
-      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${encodeURIComponent(city)}&subType=AIRPORT&view=LIGHT`,
+      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${city}&subType=AIRPORT,CITY&view=LIGHT`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -39,13 +41,17 @@ export async function POST(req) {
     );
 
     const locationData = await locationRes.json();
+    const locationList = locationData?.data;
 
-    // ✅ Defensive check for city lookup failure
-    if (!Array.isArray(locationData?.data) || locationData.data.length === 0) {
-      return NextResponse.json({ error: 'Could not find airport for that city' }, { status: 400 });
+    if (!Array.isArray(locationList) || locationList.length === 0) {
+      return NextResponse.json({ error: `Could not find airport for city "${city}"` }, { status: 400 });
     }
 
-    const origin = locationData.data[0].iataCode;
+    const origin = locationList[0]?.iataCode;
+
+    if (!origin) {
+      return NextResponse.json({ error: 'No airport code found for selected city' }, { status: 400 });
+    }
 
     // Step 3: Search flight offers to Jeddah (JED)
     const flightRes = await fetch(

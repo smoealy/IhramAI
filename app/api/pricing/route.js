@@ -15,6 +15,7 @@ export async function POST(req) {
     country,
     city,
     date,
+    flightPrice,
     makkahHotel,
     madinahHotel,
     makkahNights,
@@ -85,41 +86,20 @@ export async function POST(req) {
       "gcc": 1500,
     };
 
-    let estimatedAirfare = 3000;
-    const c = country?.toLowerCase();
-    if (["pakistan", "india", "bangladesh"].includes(c))
-      estimatedAirfare = regionAirfare["south asia"];
-    else if (["usa", "canada"].includes(c))
-      estimatedAirfare = regionAirfare["north america"];
-    else if (["malaysia", "indonesia", "singapore"].includes(c))
-      estimatedAirfare = regionAirfare["far east"];
-    else if (["nigeria", "kenya", "sudan", "kazakhstan"].includes(c))
-      estimatedAirfare = regionAirfare["africa"];
-    else if (["uae", "oman", "egypt", "saudi arabia", "morocco"].includes(c))
-      estimatedAirfare = regionAirfare["gcc"];
-
-    // ✈️ Try to fetch real-time airfare via Amadeus
-    let airfareCost = estimatedAirfare;
-
-    try {
-      const flightRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/flights`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          city,
-          departureDate: date,
-          adults: travelers,
-        }),
-      });
-
-      const flightJson = await flightRes.json();
-      if (flightRes.ok && flightJson.price) {
-        airfareCost = parseFloat(flightJson.price);
-      } else {
-        console.warn("⚠️ Falling back to region-based airfare");
-      }
-    } catch (e) {
-      console.error("❌ Failed to fetch real-time flight data", e);
+    let airfareCost = parseFloat(flightPrice); // Use frontend-provided price if valid
+    if (isNaN(airfareCost)) {
+      const c = country?.toLowerCase();
+      airfareCost = 3000;
+      if (["pakistan", "india", "bangladesh"].includes(c))
+        airfareCost = regionAirfare["south asia"];
+      else if (["usa", "canada"].includes(c))
+        airfareCost = regionAirfare["north america"];
+      else if (["malaysia", "indonesia", "singapore"].includes(c))
+        airfareCost = regionAirfare["far east"];
+      else if (["nigeria", "kenya", "sudan", "kazakhstan"].includes(c))
+        airfareCost = regionAirfare["africa"];
+      else if (["uae", "oman", "egypt", "saudi arabia", "morocco"].includes(c))
+        airfareCost = regionAirfare["gcc"];
     }
 
     const makkahCost = makkahMatch

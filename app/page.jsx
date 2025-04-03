@@ -58,21 +58,21 @@ export default function PlannerPage() {
         <div className="grid grid-cols-2 gap-4">
           <input
             name="makkahHotel"
-            placeholder="Makkah Hotel Name"
+            placeholder="Makkah Hotel"
             className="border p-2 rounded"
             value={formData.makkahHotel}
             onChange={handleChange}
           />
           <input
             name="madinahHotel"
-            placeholder="Madinah Hotel Name"
+            placeholder="Madinah Hotel"
             className="border p-2 rounded"
             value={formData.madinahHotel}
             onChange={handleChange}
           />
           <input
             name="country"
-            placeholder="Traveler Country"
+            placeholder="Country"
             className="border p-2 rounded"
             value={formData.country}
             onChange={handleChange}
@@ -117,21 +117,14 @@ export default function PlannerPage() {
       {result && (
         <section className="p-4 bg-green-50 border border-green-200 rounded-xl shadow space-y-2">
           <h2 className="text-xl font-bold text-green-700">💡 Estimated Pricing</h2>
-
-          {["makkah", "madinah"].map((city) => (
-            result[city] && (
-              <div key={city} className="mb-4">
-                <h3 className="text-lg font-semibold capitalize text-green-600">{city}:</h3>
-                <p><strong>Hotel:</strong> {result[city].hotel}</p>
-                <p><strong>Airfare:</strong> {result[city].breakdown.airfare} SAR</p>
-                <p><strong>Hotel:</strong> {result[city].breakdown.hotel} SAR</p>
-                <p><strong>Transport:</strong> {result[city].breakdown.transport} SAR</p>
-                <p><strong>Visa:</strong> {result[city].breakdown.visa} SAR</p>
-              </div>
-            )
-          ))}
-
-          <hr className="my-2" />
+          <p><strong>Hotel (Makkah):</strong> {result.makkahHotel}</p>
+          <p><strong>Hotel (Madinah):</strong> {result.madinahHotel}</p>
+          <p><strong>City:</strong> Makkah & Madinah</p>
+          <p><strong>Nights:</strong> {result.nights}</p>
+          <p><strong>✈️ Airfare:</strong> {result.breakdown.airfare} SAR</p>
+          <p><strong>🏨 Hotel:</strong> {result.breakdown.hotel} SAR</p>
+          <p><strong>🚘 Transport:</strong> {result.breakdown.transport} SAR</p>
+          <p><strong>🛂 Visa:</strong> {result.breakdown.visa} SAR</p>
           <p><strong>Total Price:</strong> SAR {result.price}</p>
           <p><strong>Ihram Token Discount:</strong> SAR {result.discount}</p>
           <p><strong>Tokens Needed:</strong> {result.tokens} $IHRAM</p>

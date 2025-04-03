@@ -8,14 +8,7 @@ export async function POST(req) {
   const { city, departureDate, adults } = await req.json();
 
   if (!city || !departureDate || !adults) {
-    return NextResponse.json({
-      error: 'Missing required fields',
-      missing: {
-        city: !city,
-        departureDate: !departureDate,
-        adults: !adults,
-      },
-    }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required fields: city, departureDate, or adults' }, { status: 400 });
   }
 
   const client_id = process.env.AMADEUS_CLIENT_ID;
@@ -37,7 +30,7 @@ export async function POST(req) {
 
     // Step 2: Convert city to IATA airport code
     const locationRes = await fetch(
-      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${city}&subType=AIRPORT&view=LIGHT`,
+      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${encodeURIComponent(city)}&subType=AIRPORT&view=LIGHT`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -46,13 +39,13 @@ export async function POST(req) {
     );
 
     const locationData = await locationRes.json();
-    const origin = Array.isArray(locationData?.data) && locationData.data.length > 0
-      ? locationData.data[0].iataCode
-      : null;
 
-    if (!origin) {
+    // ✅ Defensive check for city lookup failure
+    if (!Array.isArray(locationData?.data) || locationData.data.length === 0) {
       return NextResponse.json({ error: 'Could not find airport for that city' }, { status: 400 });
     }
+
+    const origin = locationData.data[0].iataCode;
 
     // Step 3: Search flight offers to Jeddah (JED)
     const flightRes = await fetch(

@@ -3,7 +3,7 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createWorker } from '@tesseract.js/node';
+import { createWorker } from 'tesseract.js';
 import formidable from 'formidable';
 import fs from 'fs';
 

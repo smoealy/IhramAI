@@ -1,37 +1,41 @@
-export const runtime = 'edge';
+// app/api/absconder/route.js
+
+export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
+import { Readable } from 'stream';
 
 export async function POST(req) {
   try {
     const formData = await req.formData();
     const file = formData.get('passport');
 
-    if (!file || !file.arrayBuffer) {
-      return NextResponse.json({ error: 'Invalid file' }, { status: 400 });
+    if (!file || typeof file === 'string') {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const ocrRes = await fetch('https://api.ocr.space/parse/image', {
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
         apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
-        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        base64Image: `data:${file.type};base64,${base64}`,
-        language: 'eng',
-        isOverlayRequired: 'false',
-      }),
+      body: (() => {
+        const form = new FormData();
+        form.append('file', new Blob([buffer]), 'passport.jpg');
+        form.append('language', 'eng');
+        form.append('isOverlayRequired', 'false');
+        return form;
+      })(),
     });
 
-    const json = await ocrRes.json();
-    const text = json.ParsedResults?.[0]?.ParsedText || '';
+    const result = await ocrResponse.json();
+
+    const text = result?.ParsedResults?.[0]?.ParsedText || '';
     const lowerText = text.toLowerCase();
 
-    // --- Basic heuristics ---
+    // --- Risk scoring ---
     let score = 0;
     const redFlags = [];
 
@@ -39,10 +43,7 @@ export async function POST(req) {
       score += 2;
       redFlags.push('High-risk nationality');
     }
-    if (
-      lowerText.includes('male') &&
-      lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
-    ) {
+    if (lowerText.includes('male') && lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)) {
       score += 2;
       redFlags.push('Young male traveler');
     }
@@ -68,6 +69,7 @@ export async function POST(req) {
       reason: redFlags.join(', ') || 'No significant red flags detected',
       extracted: text,
     });
+
   } catch (err) {
     console.error('❌ OCR API error:', err);
     return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });

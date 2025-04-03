@@ -3,43 +3,38 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import FormData from 'form-data';
-import { Readable } from 'stream';
 
 export async function POST(req) {
   try {
     const form = await req.formData();
     const file = form.get('passport');
 
-    if (!file || typeof file === 'string') {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const base64Image = buffer.toString('base64');
 
-    const formData = new FormData();
-    formData.append('file', buffer, {
-      filename: 'passport.pdf',
-      contentType: file.type,
-    });
-    formData.append('language', 'eng');
-    formData.append('isOverlayRequired', 'false');
-
-    const ocrRes = await fetch('https://api.ocr.space/parse/image', {
+    // OCR.Space API
+    const res = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
-        ...formData.getHeaders(),
+        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld', // replace with real key in prod
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formData,
+      body: new URLSearchParams({
+        base64Image: `data:application/pdf;base64,${base64Image}`,
+        language: 'eng',
+        isOverlayRequired: 'false',
+      }),
     });
 
-    const result = await ocrRes.json();
-    const text = result?.ParsedResults?.[0]?.ParsedText || '';
+    const ocr = await res.json();
+    const text = ocr?.ParsedResults?.[0]?.ParsedText || '';
     const lowerText = text.toLowerCase();
 
-    // Risk rules
+    // Risk logic
     let score = 0;
     const redFlags = [];
 
@@ -77,6 +72,6 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error('❌ OCR API error:', err);
-    return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process document.' }, { status: 500 });
   }
 }

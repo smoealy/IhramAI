@@ -44,6 +44,18 @@ export default function AbsconderDashboard() {
     }
   };
 
+  const getBoxColor = (color) => {
+    if (color === 'red') return 'border-red-600 bg-red-100';
+    if (color === 'yellow') return 'border-yellow-500 bg-yellow-100';
+    return 'border-green-600 bg-green-100';
+  };
+
+  const getBadgeColor = (color) => {
+    if (color === 'red') return 'bg-red-600';
+    if (color === 'yellow') return 'bg-yellow-500';
+    return 'bg-green-600';
+  };
+
   return (
     <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">📊 Visa Risk Dashboard</h1>
@@ -67,22 +79,14 @@ export default function AbsconderDashboard() {
         {loading ? 'Analyzing...' : 'Analyze Files'}
       </button>
 
-      {error && (
-        <div className="mt-4 text-red-600 font-medium">{error}</div>
-      )}
+      {error && <div className="mt-4 text-red-600 font-medium">{error}</div>}
 
       {results.length > 0 && (
         <div className="mt-6 space-y-4">
           {results.map((res, index) => (
             <div
               key={index}
-              className={`border rounded p-4 ${
-                res.color === 'red'
-                  ? 'border-red-600 bg-red-100'
-                  : res.color === 'yellow'
-                  ? 'border-yellow-500 bg-yellow-100'
-                  : 'border-green-600 bg-green-100'
-              }`}
+              className={`border rounded p-4 ${getBoxColor(res.color)}`}
             >
               <h2 className="text-lg font-semibold">
                 {res.filename || `File #${index + 1}`}
@@ -90,13 +94,9 @@ export default function AbsconderDashboard() {
               <p className="mt-1">
                 <strong>Status:</strong>{' '}
                 <span
-                  className={`inline-block px-2 py-0.5 rounded text-white text-sm font-semibold ${
-                    res.color === 'red'
-                      ? 'bg-red-600'
-                      : res.color === 'yellow'
-                      ? 'bg-yellow-500'
-                      : 'bg-green-600'
-                  }`}
+                  className={`inline-block px-2 py-0.5 rounded text-white text-sm font-semibold ${getBadgeColor(
+                    res.color
+                  )}`}
                 >
                   {res.status}
                 </span>

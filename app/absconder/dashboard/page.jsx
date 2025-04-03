@@ -87,26 +87,27 @@ export default function AbsconderDashboard() {
               <h2 className="text-lg font-semibold">
                 {res.filename || `File #${index + 1}`}
               </h2>
-
               <p className="mt-1">
                 <strong>Status:</strong>{' '}
-                <span
-                  className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white ${
-                    res.color === 'red'
-                      ? 'bg-red-600'
-                      : res.color === 'yellow'
-                      ? 'bg-yellow-500'
-                      : 'bg-green-600'
-                  }`}
-                >
-                  {res.status}
-                </span>
+                {res.color === 'red' && (
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-red-600">
+                    {res.status}
+                  </span>
+                )}
+                {res.color === 'yellow' && (
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-yellow-500">
+                    {res.status}
+                  </span>
+                )}
+                {res.color === 'green' && (
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-green-600">
+                    {res.status}
+                  </span>
+                )}
               </p>
-
               <p className="mt-1">
                 <strong>🧠 Reason:</strong> {res.reason}
               </p>
-
               <details className="mt-2 text-sm">
                 <summary className="cursor-pointer">View Extracted Text</summary>
                 <pre className="mt-2 whitespace-pre-wrap bg-white p-2 rounded border border-gray-300 max-h-64 overflow-y-auto">

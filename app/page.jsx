@@ -9,6 +9,7 @@ export default function PlannerPage() {
     makkahNights: '',
     madinahNights: '',
     country: '',
+    city: '',
     date: '',
     travelers: '',
   });
@@ -27,14 +28,34 @@ export default function PlannerPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/pricing', {
+      // Get live airfare from Amadeus
+      const flightRes = await fetch('/api/flights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          city: formData.city,
+          departureDate: formData.date,
+          adults: formData.travelers,
+        }),
+      });
+      const flightData = await flightRes.json();
+
+      if (!flightRes.ok) {
+        throw new Error(flightData.error || 'Flight fetch failed');
+      }
+
+      // Combine flight data with planner logic
+      const pricingRes = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          flightPrice: flightData.price,
+        }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await pricingRes.json();
+      if (!pricingRes.ok) {
         setError(data.error || 'Something went wrong');
       } else {
         setResult(data);
@@ -90,6 +111,13 @@ export default function PlannerPage() {
             placeholder="Country"
             className="border p-2 rounded"
             value={formData.country}
+            onChange={handleChange}
+          />
+          <input
+            name="city"
+            placeholder="Departure City"
+            className="border p-2 rounded"
+            value={formData.city}
             onChange={handleChange}
           />
           <input

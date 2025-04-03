@@ -3,18 +3,22 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createWorker } from 'tesseract.js';
+import { createWorker } from '@tesseract.js/node';
+import formidable from 'formidable';
+import fs from 'fs';
 
 export async function POST(req) {
   try {
-    const formData = await req.formData();
-    const file = formData.get('passport');
-
-    if (!file || typeof file.arrayBuffer !== 'function') {
-      return NextResponse.json({ error: 'Invalid file upload.' }, { status: 400 });
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const form = formidable({ multiples: false });
+    const buffer = await new Promise((resolve, reject) => {
+      form.parse(req, async (err, fields, files) => {
+        if (err) return reject(err);
+        const file = files.passport;
+        if (!file || Array.isArray(file)) return reject('Invalid file.');
+        const data = fs.readFileSync(file.filepath);
+        resolve(data);
+      });
+    });
 
     const worker = await createWorker('eng');
     const {
@@ -24,7 +28,7 @@ export async function POST(req) {
 
     const lowerText = text.toLowerCase();
 
-    // --- Heuristics ---
+    // --- Basic heuristics ---
     let score = 0;
     const redFlags = [];
 
@@ -32,17 +36,16 @@ export async function POST(req) {
       score += 2;
       redFlags.push('High-risk nationality');
     }
-
     if (lowerText.includes('male') && lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)) {
       score += 2;
       redFlags.push('Young male traveler');
     }
-
     if (lowerText.includes('student') || lowerText.includes('labor')) {
       score += 1;
       redFlags.push('Occupation: student or labor');
     }
 
+    // --- Final label ---
     let label = 'green';
     let status = 'Low risk';
     if (score >= 5) {
@@ -64,3 +67,9 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

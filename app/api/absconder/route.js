@@ -7,77 +7,106 @@ import { createWorker } from 'tesseract.js';
 import formidable from 'formidable';
 import fs from 'fs';
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+const analyzeText = (text) => {
+  const lowerText = text.toLowerCase();
+  let score = 0;
+  const redFlags = [];
+
+  // Heuristic: country
+  if (lowerText.includes('pakistan') || lowerText.includes('bangladesh')) {
+    score += 2;
+    redFlags.push('High-risk nationality');
+  }
+
+  // Heuristic: age + gender (young male)
+  if (
+    lowerText.includes('male') &&
+    lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
+  ) {
+    score += 2;
+    redFlags.push('Young male traveler');
+  }
+
+  // Heuristic: visa type
+  if (lowerText.includes('tourist visa')) {
+    score += 1;
+    redFlags.push('Tourist visa');
+  }
+
+  // Heuristic: port of entry
+  if (lowerText.includes('jeddah') || lowerText.includes('riyadh')) {
+    score += 1;
+    redFlags.push('Common port of entry');
+  }
+
+  // Heuristic: occupation
+  if (lowerText.includes('student') || lowerText.includes('labor')) {
+    score += 1;
+    redFlags.push('Occupation: student or labor');
+  }
+
+  // Heuristic: return history (missing reentry stamps)
+  if (lowerText.includes('no reentry') || lowerText.includes('no exit')) {
+    score += 2;
+    redFlags.push('No exit stamp detected');
+  }
+
+  // Heuristic: family in Saudi
+  if (lowerText.includes('sponsor') || lowerText.includes('relative in saudi')) {
+    score += 1;
+    redFlags.push('Family in Saudi Arabia');
+  }
+
+  let label = 'green';
+  let status = 'Low risk';
+  if (score >= 6) {
+    label = 'red';
+    status = 'Likely absconder';
+  } else if (score >= 3) {
+    label = 'yellow';
+    status = 'Moderate risk';
+  }
+
+  return { label, status, redFlags };
+};
+
 export async function POST(req) {
   try {
     const form = formidable({ multiples: true });
     const buffers = await new Promise((resolve, reject) => {
       form.parse(req, async (err, fields, files) => {
         if (err) return reject(err);
-        const uploadedFiles = Array.isArray(files.passport) ? files.passport : [files.passport];
-        const fileBuffers = uploadedFiles.map(file => fs.readFileSync(file.filepath));
-        resolve(fileBuffers);
+        const results = [];
+        const fileList = Array.isArray(files.passport) ? files.passport : [files.passport];
+        for (const file of fileList) {
+          const buffer = fs.readFileSync(file.filepath);
+          results.push({ filename: file.originalFilename, buffer });
+        }
+        resolve(results);
       });
     });
 
     const worker = await createWorker('eng');
     const results = [];
 
-    for (const buffer of buffers) {
+    for (const item of buffers) {
       const {
-        data: { text }
-      } = await worker.recognize(buffer);
+        data: { text },
+      } = await worker.recognize(item.buffer);
 
-      const lowerText = text.toLowerCase();
-      let score = 0;
-      const redFlags = [];
-
-      if (lowerText.includes('pakistan') || lowerText.includes('bangladesh')) {
-        score += 2;
-        redFlags.push('High-risk nationality');
-      }
-      if (
-        lowerText.includes('male') &&
-        lowerText.match(/\d{2}[-/ ]?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/)
-      ) {
-        score += 2;
-        redFlags.push('Young male traveler');
-      }
-      if (lowerText.includes('student') || lowerText.includes('labor')) {
-        score += 1;
-        redFlags.push('Occupation: student or labor');
-      }
-      if (lowerText.includes('tourist visa') || lowerText.includes('umrah visa') || lowerText.includes('hajj visa')) {
-        score += 1;
-        redFlags.push('Tourist or pilgrimage visa');
-      }
-      if (lowerText.includes('jeddah') || lowerText.includes('riyadh') || lowerText.includes('madinah')) {
-        score += 1;
-        redFlags.push('Port of entry detected');
-      }
-      if (lowerText.includes('no return') || lowerText.includes('overstay')) {
-        score += 2;
-        redFlags.push('Bad return history');
-      }
-      if (lowerText.includes('sponsor') || lowerText.includes('family in saudi')) {
-        score += 1;
-        redFlags.push('Family or sponsor in Saudi');
-      }
-
-      let label = 'green';
-      let status = 'Low risk';
-      if (score >= 6) {
-        label = 'red';
-        status = 'Likely absconder';
-      } else if (score >= 3) {
-        label = 'yellow';
-        status = 'Moderate risk';
-      }
-
+      const analysis = analyzeText(text);
       results.push({
-        status,
-        color: label,
-        reason: redFlags.join(', ') || 'No significant red flags detected',
-        extracted: text.substring(0, 500) // For preview
+        filename: item.filename,
+        status: analysis.status,
+        color: analysis.label,
+        reason: analysis.redFlags.join(', ') || 'No significant red flags',
+        extracted: text,
       });
     }
 
@@ -86,12 +115,6 @@ export async function POST(req) {
     return NextResponse.json({ results });
   } catch (err) {
     console.error('❌ OCR API error:', err);
-    return NextResponse.json({ error: 'Failed to analyze passport(s)' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process documents' }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

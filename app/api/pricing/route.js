@@ -28,10 +28,13 @@ export async function POST(req) {
   try {
     await readCSV();
 
+    // Filter only valid rows with both Hotel Name and City
     const matches = hotelData.filter((row) => {
+      if (!row["Hotel Name"] || !row["City"] || !row["Price"]) return false;
+
       return (
-        row["Hotel Name"]?.toLowerCase().includes(hotelName.toLowerCase()) &&
-        row["City"]?.toLowerCase() === city.toLowerCase()
+        row["Hotel Name"].toLowerCase().includes(hotelName.toLowerCase()) &&
+        row["City"].toLowerCase() === city.toLowerCase()
       );
     });
 
@@ -61,7 +64,7 @@ export async function POST(req) {
       city,
     });
   } catch (err) {
-    console.error("Pricing API error:", err);
+    console.error("❌ Pricing API error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

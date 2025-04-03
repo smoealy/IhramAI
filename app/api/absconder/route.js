@@ -19,7 +19,7 @@ export async function POST(req) {
     const ocrRes = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld', // Replace with your key
+        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
@@ -34,7 +34,13 @@ export async function POST(req) {
     const text = ocrJson?.ParsedResults?.[0]?.ParsedText || '';
     const lowerText = text.toLowerCase();
 
-    // --- Basic Heuristic Flags ---
+    // Optional structured fields
+    const visaType = formData.get('visaType')?.toLowerCase() || '';
+    const portOfEntry = formData.get('portOfEntry')?.toLowerCase() || '';
+    const hasReturnTicket = formData.get('hasReturnTicket') === 'true';
+    const hasFamilyInSaudi = formData.get('hasFamilyInSaudi') === 'true';
+
+    // --- Heuristics ---
     let score = 0;
     const redFlags = [];
 
@@ -54,6 +60,21 @@ export async function POST(req) {
     if (lowerText.includes('student') || lowerText.includes('labor')) {
       score += 1;
       redFlags.push('Occupation: student or labor');
+    }
+
+    if (visaType === 'tourist') {
+      score += 1;
+      redFlags.push('Tourist visa');
+    }
+
+    if (!hasReturnTicket) {
+      score += 2;
+      redFlags.push('No return ticket');
+    }
+
+    if (!hasFamilyInSaudi) {
+      score += 1;
+      redFlags.push('No family in Saudi');
     }
 
     // --- Final Label ---

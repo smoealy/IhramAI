@@ -1,3 +1,7 @@
+// app/api/pricing/route.js
+
+export const runtime = "nodejs";
+
 import fs from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
@@ -10,7 +14,6 @@ export async function POST(req) {
   const filePath = path.join(process.cwd(), "data", "prices.csv");
   const hotelData = [];
 
-  // Read CSV data
   const readCSV = () =>
     new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
@@ -23,7 +26,6 @@ export async function POST(req) {
   try {
     await readCSV();
 
-    // --- Filter matching hotel ---
     const matches = hotelData.filter((row) => {
       return (
         row["Hotel Name"]?.toLowerCase().includes(hotelName.toLowerCase()) &&
@@ -32,26 +34,25 @@ export async function POST(req) {
     });
 
     if (!matches.length) {
-      return NextResponse.json({
-        error: "No matching hotel found.",
-      }, { status: 404 });
+      return NextResponse.json(
+        { error: "No matching hotel found." },
+        { status: 404 }
+      );
     }
 
-    // --- Use average price of all matching entries ---
     const avgPricePerNight =
-      matches.reduce((sum, row) => sum + parseFloat(row.Price), 0) /
+      matches.reduce((sum, row) => sum + parseFloat(row.Price || 0), 0) /
       matches.length;
 
     const totalNights = parseInt(duration);
     const totalPrice = avgPricePerNight * totalNights * travelers;
 
-    // Ihram Token Discount
     const discountRate = 0.12;
     const discounted = totalPrice * (1 - discountRate);
 
     return NextResponse.json({
       price: totalPrice.toFixed(2),
-      tokens: discounted.toFixed(0), // mock: 1 token = $1
+      tokens: discounted.toFixed(0),
       discount: (totalPrice - discounted).toFixed(2),
       hotel: hotelName,
       nights: totalNights,
@@ -59,8 +60,9 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error("Pricing API error:", err);
-    return NextResponse.json({
-      error: "Internal server error",
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

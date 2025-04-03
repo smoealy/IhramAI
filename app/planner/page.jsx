@@ -6,6 +6,7 @@ export default function PlannerPage() {
   const [formData, setFormData] = useState({
     hotelName: '',
     city: '',
+    country: '',
     date: '',
     duration: '',
     travelers: '',
@@ -53,7 +54,7 @@ export default function PlannerPage() {
 
       <section className="p-4 bg-white border rounded-xl shadow space-y-4">
         <h2 className="text-xl font-semibold mb-2">📊 Get Real-Time Estimate</h2>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <input
             name="hotelName"
@@ -67,6 +68,13 @@ export default function PlannerPage() {
             placeholder="City (Makkah or Madinah)"
             className="border p-2 rounded"
             value={formData.city}
+            onChange={handleChange}
+          />
+          <input
+            name="country"
+            placeholder="Country (e.g. Pakistan, USA)"
+            className="border p-2 rounded"
+            value={formData.country}
             onChange={handleChange}
           />
           <input
@@ -112,6 +120,12 @@ export default function PlannerPage() {
           <p><strong>Hotel:</strong> {result.hotel}</p>
           <p><strong>City:</strong> {result.city}</p>
           <p><strong>Nights:</strong> {result.nights}</p>
+          <hr />
+          <p>✈️ Airfare: {result.breakdown.airfare} SAR</p>
+          <p>🏨 Hotel: {result.breakdown.hotel} SAR</p>
+          <p>🚐 Transport: {result.breakdown.transport} SAR</p>
+          <p>🛂 Visa: {result.breakdown.visa} SAR</p>
+          <hr />
           <p><strong>Total Price:</strong> SAR {result.price}</p>
           <p><strong>Ihram Token Discount:</strong> SAR {result.discount}</p>
           <p><strong>Tokens Needed:</strong> {result.tokens} $IHRAM</p>

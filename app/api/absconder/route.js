@@ -4,25 +4,21 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
-import formidable from 'formidable';
-import fs from 'fs';
 
 export async function POST(req) {
   try {
-    const form = formidable({ multiples: false });
-    const buffer = await new Promise((resolve, reject) => {
-      form.parse(req, async (err, fields, files) => {
-        if (err) return reject(err);
-        const file = files.passport;
-        if (!file || Array.isArray(file)) return reject('Invalid file.');
-        const data = fs.readFileSync(file.filepath);
-        resolve(data);
-      });
-    });
+    const formData = await req.formData();
+    const file = formData.get('passport');
+
+    if (!file || typeof file.arrayBuffer !== 'function') {
+      return NextResponse.json({ error: 'Invalid file upload' }, { status: 400 });
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     const worker = await createWorker('eng');
     const {
-      data: { text }
+      data: { text },
     } = await worker.recognize(buffer);
     await worker.terminate();
 
@@ -63,7 +59,7 @@ export async function POST(req) {
       status,
       color: label,
       reason: redFlags.join(', ') || 'No significant red flags detected',
-      extracted: text
+      extracted: text,
     });
   } catch (err) {
     console.error('❌ Absconder Check Error:', err);

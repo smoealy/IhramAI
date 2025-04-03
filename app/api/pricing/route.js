@@ -9,6 +9,8 @@ import csv from "csv-parser";
 
 export async function POST(req) {
   const body = await req.json();
+  console.log("📥 Received pricing request:", body);
+
   const { travelers, city, date, duration, hotelName } = body;
 
   const filePath = path.join(process.cwd(), "data", "prices.csv");

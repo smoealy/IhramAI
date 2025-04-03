@@ -6,9 +6,10 @@ export default function PlannerPage() {
   const [formData, setFormData] = useState({
     makkahHotel: '',
     madinahHotel: '',
+    makkahNights: '',
+    madinahNights: '',
     country: '',
     date: '',
-    duration: '',
     travelers: '',
   });
 
@@ -71,6 +72,20 @@ export default function PlannerPage() {
             onChange={handleChange}
           />
           <input
+            name="makkahNights"
+            placeholder="Nights in Makkah"
+            className="border p-2 rounded"
+            value={formData.makkahNights}
+            onChange={handleChange}
+          />
+          <input
+            name="madinahNights"
+            placeholder="Nights in Madinah"
+            className="border p-2 rounded"
+            value={formData.madinahNights}
+            onChange={handleChange}
+          />
+          <input
             name="country"
             placeholder="Country"
             className="border p-2 rounded"
@@ -82,13 +97,6 @@ export default function PlannerPage() {
             type="date"
             className="border p-2 rounded"
             value={formData.date}
-            onChange={handleChange}
-          />
-          <input
-            name="duration"
-            placeholder="Duration (nights)"
-            className="border p-2 rounded"
-            value={formData.duration}
             onChange={handleChange}
           />
           <input
@@ -119,8 +127,6 @@ export default function PlannerPage() {
           <h2 className="text-xl font-bold text-green-700">💡 Estimated Pricing</h2>
           <p><strong>Hotel (Makkah):</strong> {result.makkahHotel}</p>
           <p><strong>Hotel (Madinah):</strong> {result.madinahHotel}</p>
-          <p><strong>City:</strong> Makkah & Madinah</p>
-          <p><strong>Nights:</strong> {result.nights}</p>
           <p><strong>✈️ Airfare:</strong> {result.breakdown.airfare} SAR</p>
           <p><strong>🏨 Hotel:</strong> {result.breakdown.hotel} SAR</p>
           <p><strong>🚘 Transport:</strong> {result.breakdown.transport} SAR</p>

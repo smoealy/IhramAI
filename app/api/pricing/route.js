@@ -27,13 +27,11 @@ export async function POST(req) {
     await readCSV();
 
     const matches = hotelData.filter((row) => {
-      const hotel = row["Hotel Name"];
-      const rowCity = row["City"];
-      if (!hotel || !rowCity) return false;
-
+      const hotel = row["Hotel Name"] || "";
+      const rowCity = row["City"] || "";
       return (
-        hotel.toLowerCase().includes(hotelName.toLowerCase()) &&
-        rowCity.toLowerCase() === city.toLowerCase()
+        hotel.toLowerCase().includes(hotelName?.toLowerCase?.() || "") &&
+        rowCity.toLowerCase() === city?.toLowerCase?.()
       );
     });
 
@@ -49,7 +47,7 @@ export async function POST(req) {
       matches.reduce((sum, row) => sum + parseFloat(row.Price || 0), 0) /
       matches.length;
 
-    const totalNights = parseInt(duration);
+    const totalNights = parseInt(duration || 1);
     const totalPrice = avgPricePerNight * totalNights * travelers;
 
     const discountRate = 0.12;

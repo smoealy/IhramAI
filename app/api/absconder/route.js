@@ -1,6 +1,6 @@
 // app/api/absconder/route.js
 
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'; // ✅ This is the right way now
 
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
@@ -68,9 +68,3 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

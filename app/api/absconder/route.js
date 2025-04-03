@@ -7,24 +7,19 @@ import { createWorker } from 'tesseract.js';
 
 export async function POST(req) {
   try {
-    const formData = await req.formData();
-    const file = formData.get('passport');
+    const { imageBase64 } = await req.json();
 
-    if (!file || typeof file.arrayBuffer !== 'function') {
-      return NextResponse.json({ error: 'Invalid file upload' }, { status: 400 });
+    if (!imageBase64) {
+      return NextResponse.json({ error: 'Missing image' }, { status: 400 });
     }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
 
     const worker = await createWorker('eng');
     const {
-      data: { text },
-    } = await worker.recognize(buffer);
+      data: { text }
+    } = await worker.recognize(Buffer.from(imageBase64, 'base64'));
     await worker.terminate();
 
     const lowerText = text.toLowerCase();
-
-    // --- Basic heuristics ---
     let score = 0;
     const redFlags = [];
 
@@ -44,7 +39,6 @@ export async function POST(req) {
       redFlags.push('Occupation: student or labor');
     }
 
-    // --- Final label ---
     let label = 'green';
     let status = 'Low risk';
     if (score >= 5) {
@@ -58,11 +52,11 @@ export async function POST(req) {
     return NextResponse.json({
       status,
       color: label,
-      reason: redFlags.join(', ') || 'No significant red flags detected',
+      reason: redFlags.join(', ') || 'No red flags detected',
       extracted: text,
     });
   } catch (err) {
-    console.error('❌ Absconder Check Error:', err);
-    return NextResponse.json({ error: 'Failed to analyze passport' }, { status: 500 });
+    console.error('❌ OCR error:', err);
+    return NextResponse.json({ error: 'OCR failed' }, { status: 500 });
   }
 }

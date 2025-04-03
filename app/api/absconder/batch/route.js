@@ -1,17 +1,12 @@
 // app/api/absconder/batch/route.js
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const preferredRegion = 'iad1';
 
 import { NextResponse } from 'next/server';
 import formidable from 'formidable';
 import fs from 'fs';
-import path from 'path';
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 async function analyzeText(text) {
   const lowerText = text.toLowerCase();
@@ -72,7 +67,7 @@ export async function POST(req) {
     const res = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        apikey: process.env.OCR_SPACE_API_KEY,
+        apikey: process.env.OCR_SPACE_API_KEY || 'helloworld',
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({

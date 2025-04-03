@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
-  const { origin, destination, departureDate, adults } = await req.json();
+  const { city, departureDate, adults } = await req.json();
 
   const client_id = process.env.AMADEUS_CLIENT_ID;
   const client_secret = process.env.AMADEUS_CLIENT_SECRET;
@@ -24,9 +24,26 @@ export async function POST(req) {
 
     const { access_token } = await tokenRes.json();
 
-    // Step 2: Search flight offers
+    // Step 2: Convert city to IATA airport code
+    const locationRes = await fetch(
+      `https://test.api.amadeus.com/v1/reference-data/locations?keyword=${city}&subType=AIRPORT&countryCode=&view=LIGHT`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    const locationData = await locationRes.json();
+    const origin = locationData?.data?.[0]?.iataCode || null;
+
+    if (!origin) {
+      return NextResponse.json({ error: 'Could not find airport for that city' }, { status: 400 });
+    }
+
+    // Step 3: Search flight offers to Jeddah (JED) or Madinah (MED)
     const flightRes = await fetch(
-      `https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=${origin}&destinationLocationCode=${destination}&departureDate=${departureDate}&adults=${adults}&currencyCode=SAR&max=1`,
+      `https://test.api.amadeus.com/v2/shopping/flight-offers?originLocationCode=${origin}&destinationLocationCode=JED&departureDate=${departureDate}&adults=${adults}&currencyCode=SAR&max=1`,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -35,7 +52,6 @@ export async function POST(req) {
     );
 
     const data = await flightRes.json();
-
     const price = data?.data?.[0]?.price?.total || 'N/A';
 
     return NextResponse.json({ price });

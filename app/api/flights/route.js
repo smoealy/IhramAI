@@ -8,7 +8,14 @@ export async function POST(req) {
   const { city, departureDate, adults } = await req.json();
 
   if (!city || !departureDate || !adults) {
-    return NextResponse.json({ error: 'Missing required fields: city, departureDate, or adults' }, { status: 400 });
+    return NextResponse.json({
+      error: 'Missing required fields',
+      missing: {
+        city: !city,
+        departureDate: !departureDate,
+        adults: !adults,
+      },
+    }, { status: 400 });
   }
 
   const client_id = process.env.AMADEUS_CLIENT_ID;

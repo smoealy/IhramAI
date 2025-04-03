@@ -89,21 +89,17 @@ export default function AbsconderDashboard() {
               </h2>
               <p className="mt-1">
                 <strong>Status:</strong>{' '}
-                {res.color === 'red' && (
-                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-red-600">
-                    {res.status}
-                  </span>
-                )}
-                {res.color === 'yellow' && (
-                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-yellow-500">
-                    {res.status}
-                  </span>
-                )}
-                {res.color === 'green' && (
-                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium text-white bg-green-600">
-                    {res.status}
-                  </span>
-                )}
+                <span
+                  className={`inline-block px-2 py-0.5 rounded text-white text-sm font-semibold ${
+                    res.color === 'red'
+                      ? 'bg-red-600'
+                      : res.color === 'yellow'
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
+                >
+                  {res.status}
+                </span>
               </p>
               <p className="mt-1">
                 <strong>🧠 Reason:</strong> {res.reason}

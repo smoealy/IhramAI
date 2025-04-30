@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ethers } from 'ethers';
+import { logAIInteraction } from '../../firebase/logInteraction';
 
 const tokenAddress = '0x2f4fb395cf2a622fae074f7018563494072d1d95';
 
@@ -21,6 +22,32 @@ const tokenABI = [
     type: 'function',
   },
 ];
+
+function VoteButtons({ interactionId }) {
+  const handleVote = async (type) => {
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        body: JSON.stringify({ interactionId, vote: type }),
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Vote failed");
+    } catch (err) {
+      console.error("Error voting:", err);
+    }
+  };
+
+  return (
+    <div className="flex gap-3 mt-1">
+      <button onClick={() => handleVote("up")} className="text-green-600 text-sm hover:underline">
+        👍 Helpful
+      </button>
+      <button onClick={() => handleVote("down")} className="text-red-600 text-sm hover:underline">
+        👎 Not helpful
+      </button>
+    </div>
+  );
+}
 
 export default function AIPlannerPage() {
   const [hasAccess, setHasAccess] = useState(false);
@@ -62,13 +89,21 @@ export default function AIPlannerPage() {
     const newMessages = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
     setInput('');
+
     const res = await fetch('/api/chat', {
       method: 'POST',
       body: JSON.stringify({ messages: newMessages }),
       headers: { 'Content-Type': 'application/json' },
     });
     const data = await res.json();
-    setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+
+    // ✅ log to Firestore and store interactionId
+    const interactionId = await logAIInteraction(input, data.reply, 0);
+
+    setMessages([
+      ...newMessages,
+      { role: 'assistant', content: data.reply, interactionId },
+    ]);
   }
 
   if (loading) return <div className="p-6 text-gray-500">Checking your token balance…</div>;
@@ -90,12 +125,18 @@ export default function AIPlannerPage() {
               msg.role === 'user' ? 'bg-white text-right' : 'bg-green-100 text-left'
             }`}
           >
-            <span className="block font-medium">{msg.role === 'user' ? '🧕 You' : '🤖 Ihram AI'}</span>
+            <span className="block font-medium">
+              {msg.role === 'user' ? '🧕 You' : '🤖 Ihram AI'}
+            </span>
             <p>{msg.content}</p>
+            {msg.role === 'assistant' && msg.interactionId && (
+              <VoteButtons interactionId={msg.interactionId} />
+            )}
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
+
       <div className="flex gap-2">
         <input
           className="flex-1 border rounded px-3 py-2 text-sm"

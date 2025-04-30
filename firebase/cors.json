@@ -1,0 +1,11 @@
+[
+  {
+    "origin": [
+      "https://ihram-ai.vercel.app",
+      "https://ihram-ai-git-ai-cleanup-saad-alis-projects-84106774.vercel.app"
+    ],
+    "method": ["GET", "POST", "PUT"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]

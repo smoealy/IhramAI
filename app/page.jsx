@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ethers } from 'ethers';
-import { logAIInteraction } from '../../firebase/logInteraction';
+import { logAIInteraction } from '../firebase/logInteraction';
+import { logVote } from '../firebase/feedbackLogger';
 
 const tokenAddress = '0x2f4fb395cf2a622fae074f7018563494072d1d95';
 
@@ -97,7 +98,6 @@ export default function AIPlannerPage() {
     });
     const data = await res.json();
 
-    // ✅ log to Firestore and store interactionId
     const interactionId = await logAIInteraction(input, data.reply, 0);
 
     setMessages([

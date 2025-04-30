@@ -56,11 +56,17 @@ export default function AIPlannerPage() {
   }, []);
 
   async function handleAskAI() {
+    setResponse("Thinking...");
+    const messages = [
+      { role: "user", content: prompt }
+    ];
+
     const res = await fetch("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ messages }),
       headers: { "Content-Type": "application/json" }
     });
+
     const data = await res.json();
     setResponse(data.reply || "No response received.");
   }

@@ -1,13 +1,10 @@
-// firebase/logInteraction.js
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "./firebase";
+import { db } from "./firebase"; // auth removed for backend-safe logging
 
 export async function logAIInteraction(prompt, response, tokensUsed = 0) {
-  const userId = auth.currentUser?.uid || "guest";
-
   try {
     await addDoc(collection(db, "interactions"), {
-      userId,
+      userId: "server", // fixed for now
       prompt,
       response,
       tokensUsed,

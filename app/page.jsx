@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ethers } from 'ethers';
 import { logAIInteraction } from '../firebase/logInteraction';
 import { logVote } from '../firebase/feedbackLogger';
+import { uploadFile } from '../firebase/uploadHandler'; // ✅ new
 
 const tokenAddress = '0x2f4fb395cf2a622fae074f7018563494072d1d95';
 
@@ -55,6 +56,9 @@ export default function AIPlannerPage() {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+  const [uploadType, setUploadType] = useState('quote');
+  const [uploadFileState, setUploadFileState] = useState(null);
+  const [uploadMessage, setUploadMessage] = useState('');
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -106,6 +110,27 @@ export default function AIPlannerPage() {
     ]);
   }
 
+  async function handleFileUpload() {
+    if (!uploadFileState) {
+      setUploadMessage("❌ Please select a file.");
+      return;
+    }
+
+    try {
+      const url = await uploadFile(uploadFileState, uploadType);
+      setUploadMessage(`✅ File uploaded!`);
+      setUploadFileState(null);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploadMessage("❌ Upload failed.");
+    }
+  }
+
+  function handleFileChange(e) {
+    setUploadFileState(e.target.files[0]);
+    setUploadMessage('');
+  }
+
   if (loading) return <div className="p-6 text-gray-500">Checking your token balance…</div>;
   if (!hasAccess)
     return (
@@ -117,6 +142,7 @@ export default function AIPlannerPage() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-green-700">💬 Ihram AI Planner</h1>
+
       <div className="border rounded-lg h-[400px] overflow-y-auto p-4 bg-gray-50 space-y-3">
         {messages.map((msg, i) => (
           <div
@@ -148,6 +174,39 @@ export default function AIPlannerPage() {
         <button onClick={handleSubmit} className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800">
           Send
         </button>
+      </div>
+
+      {/* 🔽 Upload Form */}
+      <div className="border p-4 rounded bg-white space-y-3">
+        <h2 className="text-lg font-semibold">📎 Upload a File</h2>
+        <div className="flex flex-col gap-2">
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={uploadType}
+            onChange={(e) => setUploadType(e.target.value)}
+          >
+            <option value="quote">Upload Quote (PDF/Image)</option>
+            <option value="passport">Upload Passport (Absconder Risk)</option>
+          </select>
+
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            onChange={handleFileChange}
+            className="border rounded p-1 text-sm"
+          />
+
+          <button
+            onClick={handleFileUpload}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Upload
+          </button>
+
+          {uploadMessage && (
+            <div className="text-sm text-green-700 mt-1">{uploadMessage}</div>
+          )}
+        </div>
       </div>
     </main>
   );

@@ -1,5 +1,5 @@
 import { OpenAI } from "openai";
-
+import { logAIInteraction } from "../../../firebase/logInteraction";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });

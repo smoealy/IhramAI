@@ -1,21 +1,17 @@
-// firebase/firebase.js
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+// firebase/logInteraction.js
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "./firebase"; // ❌ no auth needed for API routes
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCZLugtBQK8eSKdoS2wcZlzxQQ8G2g-yR8",
-  authDomain: "ihram-ai.firebaseapp.com",
-  projectId: "ihram-ai",
-  storageBucket: "ihram-ai.firebasestorage.app",
-  messagingSenderId: "486268863536",
-  appId: "1:486268863536:web:35f62a29794ab934f519f5",
-  measurementId: "G-Y9DZ0332T4"
-};
-
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-
-// Sign in anonymously when Firebase loads
-signInAnonymously(auth).catch(console.error);
+export async function logAIInteraction(prompt, response, tokensUsed = 0) {
+  try {
+    await addDoc(collection(db, "interactions"), {
+      userId: "server", // fixed userId for backend logs
+      prompt,
+      response,
+      tokensUsed,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Error logging interaction:", error);
+  }
+}

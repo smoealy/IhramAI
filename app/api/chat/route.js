@@ -1,5 +1,6 @@
 import { OpenAI } from "openai";
-import { logAIInteraction } from "../../../firebase/logInteraction";
+import { logAIInteraction } from "../../../firebase/logInteraction"; // ✅ Firebase logger
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -33,6 +34,9 @@ Keep your answers short, sincere, and rooted in Islamic values. Always assume th
     });
 
     const reply = completion.choices[0].message.content;
+
+    // ✅ Log interaction to Firebase
+    await logAIInteraction(messages[messages.length - 1].content, reply, 0); // token count = 0 for now
 
     return new Response(JSON.stringify({ reply }), {
       status: 200,

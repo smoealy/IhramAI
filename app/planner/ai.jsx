@@ -84,7 +84,12 @@ export default function AIPlannerPage() {
       <h1 className="text-3xl font-bold text-green-700">💬 Ihram AI Planner</h1>
       <div className="border rounded-lg h-[400px] overflow-y-auto p-4 bg-gray-50 space-y-3">
         {messages.map((msg, i) => (
-          <div key={i} className={`text-sm p-2 rounded ${msg.role === 'user' ? 'bg-white text-right' : 'bg-green-100 text-left'}`}>
+          <div
+            key={i}
+            className={`text-sm p-2 rounded ${
+              msg.role === 'user' ? 'bg-white text-right' : 'bg-green-100 text-left'
+            }`}
+          >
             <span className="block font-medium">{msg.role === 'user' ? '🧕 You' : '🤖 Ihram AI'}</span>
             <p>{msg.content}</p>
           </div>
